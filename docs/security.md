@@ -1,3 +1,5 @@
+日本語 | [English](security.en.md)
+
 # 安全策ポリシー（フェーズ2）
 
 MCPサーバの安全策は [`fugaku_policy.py`](../fugaku_policy.py) に集約し、すべて環境変数で制御する。

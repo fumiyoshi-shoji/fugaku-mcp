@@ -1,3 +1,5 @@
+日本語 | [English](README.en.md)
+
 # fugaku-mcp
 
 スーパーコンピュータ「富岳」を **AIエージェント（Claude Code 等）から自然言語で操作**できるようにする
