@@ -28,7 +28,18 @@ if not CERT:
     raise SystemExit("環境変数 FUGAKU_CERT（証明書PEMのパス）が未設定です。")
 
 api = FugakuAPI(CERT, proxy=PROXY, verify=VERIFY)
-mcp = FastMCP("fugaku")
+
+# サーバ instructions（接続時にクライアント経由でエージェントへ渡る基礎ガイド）
+INSTRUCTIONS = (
+    "富岳をMCP経由で操作するサーバ。計算ジョブは run_job が基本（commands を渡すと"
+    "投入→完了待ち→標準出力(stdout+stderr)の自動回収まで一括）。状態は cluster_status / list_jobs、"
+    "自分の情報は account_info、ファイルは stage_in/stage_out（パスは絶対パス。~ はファイルAPIで展開されない）。"
+    "ジョブ指定: rscgrp（例 small）, elapse=HH:MM:SS, nodes（1ノード=48コア）。"
+    "submit はサーバ側で数十秒かかるのは正常。完了ジョブは実行キューから消え job_status が履歴で判定する。"
+    "重い計算は必ず run_job で（run_command はログインノードの軽作業用）。"
+    "使い方が不明・エラーが起きたら、まず fugaku_help ツールを呼んで対処を確認すること。"
+)
+mcp = FastMCP("fugaku", instructions=INSTRUCTIONS)
 
 # ---- ユーザーコンテキスト（env優先。未指定分はAPIで自動検出しキャッシュ）----
 # 多ユーザー運用では各自が自分の証明書だけ設定すればよいよう、HOME/アカウント/グループを自動取得する。
@@ -110,6 +121,25 @@ def account_info() -> dict:
             "group": c.get("group"), "rscunit": RSCUNIT, "jobdir": jobdir(),
             "version": updater.local_version(),
             "update_available": u.get("update_available"), "latest_version": u.get("latest")}
+
+
+@mcp.tool()
+def fugaku_help(topic: str = "") -> dict:
+    """富岳の使い方・よくあるエラーの対処を返す。ジョブの投げ方が不明なとき、
+    エラー（却下/タイムアウト/権限/却下コマンド等）が起きたときに最初に参照する。
+    topic を指定すると、その語を含む見出しのセクションのみ返す（例: "エラー", "run_job", "MPI"）。"""
+    policy.audit("fugaku_help", {"topic": topic})
+    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "docs", "agent-guide.md")
+    try:
+        text = open(path, encoding="utf-8").read()
+    except OSError:
+        return {"error": "ガイドが見つかりません", "hint": "run_job で計算、stage_in/out でファイル、エラー時はrscgrp/elapse/nodesと権限を確認"}
+    if topic:
+        sections = ["## " + s for s in text.split("\n## ")[1:]]   # 各 "## " セクション
+        hit = [s for s in sections if topic.lower() in s.lower()]
+        if hit:
+            return {"topic": topic, "content": "\n\n".join(hit)}
+    return {"content": text}
 
 
 @mcp.tool()
