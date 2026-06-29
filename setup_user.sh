@@ -25,8 +25,16 @@ INFO=$(curl -fsS --cert "$PEM" -X POST "$API/command/computer/" \
   -d '{"command":"printf \"%s %s %s\" \"$(id -un)\" \"$HOME\" \"$(id -gn)\""}')
 echo "   $INFO"
 
+echo "== 4) Python環境(venv)の準備 =="
+if [ ! -x "$REPO/.venv/bin/python" ]; then
+  echo "   venv を作成し mcp を導入します..."
+  python3 -m venv "$REPO/.venv"
+  "$REPO/.venv/bin/pip" -q install "mcp[cli]"
+fi
+echo "   OK: $REPO/.venv/bin/python"
+
 echo
-echo "== 4) 貼り付け用 .mcp.json（プロジェクト直下に保存し Claude Code を完全再起動）=="
+echo "== 5) 貼り付け用 .mcp.json（プロジェクト直下に保存し Claude Code を完全再起動）=="
 echo "   ※ HOME/グループは起動時に自動検出されるため、設定は証明書パスのみで可"
 cat <<JSON
 {
@@ -42,4 +50,4 @@ cat <<JSON
 }
 JSON
 echo
-echo "完了。venvが未作成なら: cd $REPO && python3 -m venv .venv && .venv/bin/pip install \"mcp[cli]\""
+echo "完了。上記を .mcp.json として保存し、MCPクライアントを完全に再起動してください。"

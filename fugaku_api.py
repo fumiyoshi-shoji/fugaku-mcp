@@ -3,7 +3,7 @@
 cert_smoke_test.py で全エンドポイント実機検証済みの FugakuAPI を単体モジュール化したもの。
 依存ゼロ（urllib + ssl）。MCPサーバ(fugaku_mcp.py)から利用する。
 """
-import json, ssl
+import json, ssl, secrets
 import urllib.request as ur
 import urllib.parse as up
 from urllib.error import HTTPError, URLError
@@ -46,7 +46,11 @@ class FugakuAPI:
 
     @staticmethod
     def _multipart(data, filename="upload.bin", field="file"):
-        b = "----fugakuwebapiboundary7e3f"
+        # ランダム境界。万一データ中に出現したら作り直す（本体破壊を防止）
+        while True:
+            b = "----fugaku" + secrets.token_hex(16)
+            if b.encode() not in data:
+                break
         body = (
             f"--{b}\r\n"
             f'Content-Disposition: form-data; name="{field}"; filename="{filename}"\r\n'

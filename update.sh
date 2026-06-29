@@ -12,8 +12,23 @@ if [ ! -d .git ]; then
   exit 1
 fi
 
-echo "== git pull =="
-git pull --ff-only
+# origin 乗っ取り対策: 公式リポかを確認してから取得する
+origin=$(git remote get-url origin 2>/dev/null || echo "")
+case "$origin" in
+  *fumiyoshi-shoji/fugaku-mcp*) ;;
+  *) echo "origin が公式リポではありません（更新中止）: $origin" >&2; exit 1 ;;
+esac
+
+echo "== fetch =="
+git fetch --ff-only --tags origin
+if [ -n "${FUGAKU_UPDATE_REF:-}" ]; then
+  # 指定タグ/コミットに固定（サプライチェーン上、レビュー済みのrefに留めたい場合）
+  echo "== checkout $FUGAKU_UPDATE_REF =="
+  git checkout "$FUGAKU_UPDATE_REF"
+else
+  echo "== git pull (main, fast-forward only) =="
+  git pull --ff-only
+fi
 
 echo "更新後のバージョン: $(cat VERSION 2>/dev/null || echo '?')"
 

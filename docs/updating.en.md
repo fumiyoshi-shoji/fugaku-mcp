@@ -29,6 +29,11 @@ Runs `update.sh` (git pull) automatically at startup.
 > automatically** (a supply-chain risk if the repository is compromised). For shared/production environments,
 > prefer the default (notify only + manual update). Even with auto-update, a client restart is needed to load the new code.
 
+**Mitigations (implemented in update.sh)**:
+- Aborts if `origin` is not the official repository (protection against origin hijacking). `git pull` is fast-forward only.
+- To **pin to a specific tag/commit**, set `FUGAKU_UPDATE_REF` (e.g. `FUGAKU_UPDATE_REF=v1.3.0`).
+  For workflows that want to stay on a reviewed ref; when set, `update.sh` checks out that ref.
+
 ## Environment variables
 | Variable | Description |
 |---|---|
